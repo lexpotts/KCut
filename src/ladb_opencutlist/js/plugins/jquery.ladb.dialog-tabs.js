@@ -91,7 +91,7 @@
             },
             {
                 name: 'sponsor',
-                bar: 'bottombar',
+                bar: null,  // KCut: donate button removed from the main dialog
                 icon: 'ladb-opencutlist-icon-sponsor',
                 classes: 'ladb-highlighted-sponsor',
                 sponsorAd: false
@@ -461,6 +461,9 @@
     };
 
     LadbDialogTabs.prototype.showSponsorAd = function () {
+
+        // KCut: donate pop-up disabled
+        return;
 
         // Render ad in bottombar
         $('#ladb_bottombar').append(Twig.twig({ ref: 'tabs/sponsor/_ad.twig' }).render());

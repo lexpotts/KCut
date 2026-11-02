@@ -526,7 +526,7 @@ module Ladb::OpenCutList
     # -----
 
     def get_dc_attribute(key)
-      @value.get_attribute('dynamic_attributes', key)
+      @value.get_attribute('dynamic_attributes', key.to_s.downcase) # DC attribute names are always stored lower case.
     end
 
     def to_s
@@ -653,7 +653,7 @@ module Ladb::OpenCutList
     # -----
 
     def get_dc_attribute(key)
-      @value.get_attribute('dynamic_attributes', key)
+      @value.get_attribute('dynamic_attributes', key.to_s.downcase) # DC attribute names are always stored lower case.
     end
 
     def to_s

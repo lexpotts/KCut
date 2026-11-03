@@ -13,6 +13,7 @@ module Ladb::OpenCutList
   require_relative '../helper/entities_helper'
   require_relative '../helper/user_text_helper'
   require_relative '../worker/common/common_drawing_decomposition_worker'
+  require_relative '../utils/dynamic_attributes_utils'
 
   class SmartDrawTool < SmartTool
 
@@ -1398,6 +1399,9 @@ module Ladb::OpenCutList
 
         instance = model.active_entities.add_instance(definition, t)
 
+        # KCut: default DC attributes (CabNum, LenX/Y/Z, X/Y/Z, Name)
+        DynamicAttributesUtils.add_part_defaults(instance, model.active_path.nil? ? nil : model.active_path.last)
+
         if active?
 
           fn_ask_name = lambda {
@@ -1407,7 +1411,9 @@ module Ladb::OpenCutList
                 if name.empty?
                   UI.beep
                 else
+                  old_name = instance.definition.name
                   instance.definition.name = name
+                  DynamicAttributesUtils.update_name(instance, old_name)
                 end
               end
             end

@@ -369,7 +369,7 @@
 
     def std_prices
       case @type
-        when TYPE_SOLID_WOOD, TYPE_SHEET_GOOD, TYPE_DIMENSIONAL, TYPE_EDGE, TYPE_VENEER
+        when TYPE_SOLID_WOOD, TYPE_SHEET_GOOD, TYPE_DIMENSIONAL, TYPE_EDGE, TYPE_VENEER, TYPE_HARDWARE
           @std_prices
         else
           PLUGIN.get_app_defaults(DEFAULTS_DICTIONARY, @type)['std_prices']
@@ -378,6 +378,12 @@
 
     def h_std_prices
       _std_vd_to_uvd(@std_prices)
+    end
+
+    # KCut: unit price of a hardware material (price per instance), 0.0 if not set
+    def hardware_unit_price
+      return 0.0 unless @type == TYPE_HARDWARE
+      h_std_prices.first[:val].to_f
     end
 
     def has_std_prices?

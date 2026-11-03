@@ -659,6 +659,17 @@
             $editorStdCutPrices.ladbEditorStdAttributes('setTypeAndStds', [ options.type, stds ]);
         };
         const fnComputeFieldsVisibility = function (type) {
+            // KCut: hardware only shows the Attributes tab (unit price), other types show all tabs
+            const $navTabsNotForHardware = $('a[href="#tab_edit_material_general_formats"], a[href="#tab_edit_material_general_cut_options"], a[href="#tab_edit_material_general_estimate_options"]', $modal).closest('li');
+            const $btnAddStdPrice = $('button', $editorStdPrices);
+            if (type === 5) {
+                $navTabsNotForHardware.hide();
+                $btnPropertiesTabAttributes.tab('show');
+                $btnAddStdPrice.hide();
+            } else {
+                $navTabsNotForHardware.show();
+                $btnAddStdPrice.show();
+            }
             switch (type) {
                 case 0:   // TYPE_UNKNOWN
                     $inputThickness.closest('section').hide();
@@ -740,7 +751,10 @@
                     $editorStdCutPrices.closest('.form-group').show();
                     break;
                 case 5:   // TYPE_HARDWARE
-                    $inputThickness.closest('section').hide();
+                    $inputThickness.closest('section').show();
+                    $editorStdVolumicMasses.closest('.form-group').hide();
+                    $editorStdPrices.closest('.form-group').show();
+                    $editorStdCutPrices.closest('.form-group').hide();
                     break;
                 case 6:   // TYPE_VENEER
                     $inputThickness.closest('section').show();
@@ -992,12 +1006,16 @@
                     case 3: /* TYPE_DIMENSIONAL */
                     case 4: /* TYPE_EDGE */
                         return '$_' + that.lengthUnitStrippedname;
+                    case 5: /* TYPE_HARDWARE */
+                        return '$_i';
                 }
             },
             enabledUnitsByTypeCallback: function (type, rowPos) {
                 switch (type) {
                     case 1: /* TYPE_SOLID_WOOD */
                         return [ '$_m3', '$_ft3', '$_fbm' ];
+                    case 5: /* TYPE_HARDWARE */
+                        return [ '$_i' ];
                     case 2: /* TYPE_SHEET_GOOD */
                     case 3: /* TYPE_DIMENSIONAL */
                     case 4: /* TYPE_EDGE */

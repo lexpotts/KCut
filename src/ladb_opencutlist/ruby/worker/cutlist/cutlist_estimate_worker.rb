@@ -638,6 +638,10 @@ module Ladb::OpenCutList
         end
 
         h_price = definition_attributes.h_price
+        if h_price[:val] == 0
+          # KCut: fall back to the hardware material's unit price
+          h_price = { :unit => '$_p', :val => @material_attributes.hardware_unit_price }
+        end
         unless h_price[:val] == 0
 
           estimate_entry_part_def.price = h_price

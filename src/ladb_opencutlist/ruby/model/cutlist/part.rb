@@ -10,7 +10,7 @@ module Ladb::OpenCutList
     include DefHelper
     include HashableHelper
 
-    attr_reader :id, :virtual, :number, :saved_number, :name, :description, :url, :length, :width, :thickness, :count, :cutting_length, :cutting_width, :cutting_thickness, :edge_cutting_length, :edge_cutting_width, :material_name, :cumulable, :cumulative_cutting_length, :cumulative_cutting_width, :instance_count_by_part, :mass, :price, :thickness_layer_count, :tags, :ignore_grain_direction, :edge_count, :edge_pattern, :edge_material_names, :edge_material_colors, :edge_std_dimensions, :edge_decrements, :face_count, :face_pattern, :face_material_names, :face_material_colors, :face_texture_angles, :face_std_dimensions, :face_decrements, :entity_names, :final_area, :l_ratio, :w_ratio
+    attr_reader :id, :virtual, :number, :saved_number, :name, :description, :url, :length, :width, :thickness, :count, :cutting_length, :cutting_width, :cutting_thickness, :edge_cutting_length, :edge_cutting_width, :material_name, :cumulable, :cumulative_cutting_length, :cumulative_cutting_width, :instance_count_by_part, :mass, :price, :thickness_layer_count, :tags, :ignore_grain_direction, :edge_count, :edge_pattern, :edge_material_names, :edge_material_colors, :edge_std_dimensions, :edge_decrements, :face_count, :face_pattern, :face_material_names, :face_material_colors, :face_texture_angles, :face_std_dimensions, :face_decrements, :entity_names, :final_area, :l_ratio, :w_ratio, :item_values, :item_values_by_label
 
     def initialize(_def, _group)
       @_def = _def
@@ -59,6 +59,8 @@ module Ladb::OpenCutList
       @final_area = _def.final_area == 0 ? nil : DimensionUtils.format_to_readable_area(_def.final_area)
       @l_ratio = _def.size.length / [_def.size.length, _def.size.width].max
       @w_ratio = _def.size.width / [_def.size.length, _def.size.width].max
+      @item_values = _def.kcut_item_values   # KCut: values reported by single items, nil otherwise
+      @item_values_by_label = @item_values ? @item_values.map { |v| [ v[:label], v ] }.to_h : nil
 
     end
 

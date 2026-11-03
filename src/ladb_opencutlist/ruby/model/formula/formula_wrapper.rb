@@ -979,4 +979,46 @@ module Ladb::OpenCutList
 
   end
 
+  # KCut: values reported by a "single item" component (see ItemUtils).
+  # In formulas: @item['Species'] (by label or DC attribute name),
+  # @item.lenx, @item.empty?. @item alone exports "Label: value; ...".
+  class ItemFormulaWrapper < FormulaWrapper
+
+    def initialize(values)
+      @values = values.is_a?(Array) ? values : []
+    end
+
+    def [](name)
+      key = name.to_s.downcase
+      value = @values.find { |v| v[:label].to_s.downcase == key || v[:key].to_s.downcase == key }
+      value.nil? ? '' : value[:value].to_s
+    end
+
+    def labels
+      @values.map { |v| v[:label] }
+    end
+
+    def empty?
+      @values.empty?
+    end
+
+    def method_missing(name, *args)
+      return self[name] if args.empty? && @values.any? { |v| v[:key].to_s.downcase == name.to_s.downcase || v[:label].to_s.downcase == name.to_s.downcase }
+      super
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      @values.any? { |v| v[:key].to_s.downcase == name.to_s.downcase } || super
+    end
+
+    def to_s
+      @values.map { |v| "#{v[:label]}: #{v[:value]}" }.join('; ')
+    end
+
+    def export
+      to_s
+    end
+
+  end
+
 end

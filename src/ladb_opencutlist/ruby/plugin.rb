@@ -20,6 +20,7 @@ module Ladb::OpenCutList
   require_relative 'utils/dimension_utils'
   require_relative 'utils/path_utils'
   require_relative 'utils/hash_utils'
+  require_relative 'utils/item_utils'
   require_relative 'tool/smart_draw_tool'
   require_relative 'tool/smart_handle_tool'
   require_relative 'tool/smart_paint_tool'
@@ -866,6 +867,29 @@ module Ladb::OpenCutList
         end
       end
 
+      # KCut: export preset for supplier drawer orders
+      kcut_seed_presets
+
+      # KCut: "Report as single item" switch (drawer boxes, ...) on selected component instances
+      UI.add_context_menu_handler do |context_menu|
+        model = Sketchup.active_model
+        instances = model ? model.selection.grep(Sketchup::ComponentInstance) : []
+        unless instances.empty?
+          flagged = instances.select { |instance| ItemUtils.item?(instance) }
+          submenu = context_menu.add_submenu('KCut')
+          if flagged.length < instances.length
+            submenu.add_item(instances.length > 1 ? "Report #{instances.length} Components as Single Items..." : 'Report as Single Item...') {
+              kcut_report_as_single_items(instances) if _assert_not_zzz
+            }
+          end
+          unless flagged.empty?
+            submenu.add_item(flagged.length > 1 ? "List Parts of #{flagged.length} Items (default)" : "List Parts (stop reporting as '#{ItemUtils.item_material_name(flagged.first)}' item)") {
+              kcut_clear_single_items(flagged) if _assert_not_zzz
+            }
+          end
+        end
+      end
+
       # Setup Main Toolbar
       toolbar = UI::Toolbar.new(get_i18n_string('core.toolbar.name'))
 
@@ -1338,6 +1362,83 @@ module Ladb::OpenCutList
       puts '-' * heading.length
       block.call
       puts '-' * heading.length
+    end
+
+    KCUT_SVW_PRESET_NAME = 'SVW drawer order'.freeze
+
+    # KCut: adds the "SVW drawer order" export preset once (never overwrites it,
+    # so it can be edited or deleted like any other preset).
+    def kcut_seed_presets
+      dictionary = 'cutlist_export_options'
+      return if list_global_preset_names(dictionary).include?(KCUT_SVW_PRESET_NAME)
+      values = JSON.parse(JSON.generate(get_app_defaults(dictionary)))  # deep copy
+      values['source'] = 1  # EXPORT_OPTION_SOURCE_CUTLIST: one row per drawer, with count
+      col = lambda { |title, formula, align = 'left'| { 'name' => '', 'title' => title, 'formula' => formula, 'align' => align, 'hidden' => false } }
+      values['source_col_defs'] = {} unless values['source_col_defs'].is_a?(Hash)
+      values['source_col_defs']['1'] = [
+        { 'name' => 'number', 'align' => 'center', 'hidden' => false },
+        { 'name' => 'name', 'align' => 'left', 'hidden' => false },
+        { 'name' => 'count', 'align' => 'center', 'hidden' => false },
+        col.call('Width', "@item['LenX']", 'right'),
+        col.call('Depth', "@item['LenY']", 'right'),
+        col.call('Height', "@item['LenZ']", 'right'),
+        col.call('Species', "@item['Species']"),
+        col.call('Scoop', "@item['Scoop']"),
+        col.call('Pulls', "@item['Pulls']"),
+        col.call('Contents', "@item['Contents']"),
+        col.call('Other values', '@item'),
+      ]
+      set_global_preset(dictionary, values, KCUT_SVW_PRESET_NAME)
+    rescue => e
+      puts "KCut: could not add the '#{KCUT_SVW_PRESET_NAME}' export preset: #{e.message}"
+    end
+
+    # KCut: switch component instances to "report as single item" mode.
+    # Asks which Hardware item material they report into (default "Drawers").
+    def kcut_report_as_single_items(instances)
+      model = Sketchup.active_model
+      return if model.nil? || instances.empty?
+
+      existing = ItemUtils.hardware_material_names(model)
+      current = instances.map { |instance| ItemUtils.item_material_name(instance) }.compact.first
+      new_choice = 'New material...'
+      if existing.empty?
+        result = UI.inputbox([ 'Item material (Hardware)' ], [ current || ItemUtils::DEFAULT_ITEM_MATERIAL_NAME ], 'KCut - Report as Single Item')
+        return unless result
+        material_name = result[0]
+      else
+        default = current || (existing.include?(ItemUtils::DEFAULT_ITEM_MATERIAL_NAME) ? ItemUtils::DEFAULT_ITEM_MATERIAL_NAME : existing.first)
+        result = UI.inputbox([ 'Item material (Hardware)' ], [ default ], [ (existing + [ new_choice ]).join('|') ], 'KCut - Report as Single Item')
+        return unless result
+        material_name = result[0]
+        if material_name == new_choice
+          result = UI.inputbox([ 'New item material name' ], [ existing.include?(ItemUtils::DEFAULT_ITEM_MATERIAL_NAME) ? '' : ItemUtils::DEFAULT_ITEM_MATERIAL_NAME ], 'KCut - New Item Material')
+          return unless result
+          material_name = result[0]
+        end
+      end
+      return if material_name.to_s.strip.empty?
+
+      model.start_operation('Report as Single Item', true)
+      begin
+        material = ItemUtils.set_item(instances, material_name)
+        model.commit_operation
+      rescue => e
+        model.abort_operation
+        UI.messagebox("KCut: could not switch the selection to single items.\n#{e.message}")
+        return
+      end
+      Sketchup.status_text = "KCut: #{instances.length} component(s) now report as '#{material.name}' items. Regenerate the parts list to see them."
+    end
+
+    # KCut: back to OCL's default behaviour (list the component's parts).
+    def kcut_clear_single_items(instances)
+      model = Sketchup.active_model
+      return if model.nil? || instances.empty?
+      model.start_operation('List Parts of Items', true)
+      ItemUtils.clear_item(instances)
+      model.commit_operation
+      Sketchup.status_text = "KCut: #{instances.length} component(s) list their parts again. Regenerate the parts list to see them."
     end
 
     def _assert_not_zzz

@@ -693,6 +693,7 @@ tab:
       component_definition: Component definition
       component_instance: Component instance
       component_instances: Component instances
+      item: Item values (KCut)
       filename: File name
       model_name: Model name
       model_description: Model description
@@ -1532,6 +1533,7 @@ tab:
       obsolete_cutlist: "Impossible, the parts list is obsolete. Please, regenerate it."
     warning:
       is_entity_selection: Only the selected elements in your model have been taken into account.
+      kcut_item_material_missing: "Some components report as **{{material_name}}** items, but that Hardware material is missing (purged or retyped). Their parts are hidden and they are listed under their own material. Select one and use **KCut › Report as Single Item...** to recreate it."
       no_typed_materials_in_model: "Your model does not use any defined material (**$t(tab.materials.type_1)**, **$t(tab.materials.type_2)**, **$t(tab.materials.type_3)** or **$t(tab.materials.type_5)**)."
       no_typed_materials_in_selection: "Your selection does not use any defined material (**$t(tab.materials.type_1)**, **$t(tab.materials.type_2)**, **$t(tab.materials.type_3)** or **$t(tab.materials.type_5)**)."
       export_empty: Your export does not contain any part.

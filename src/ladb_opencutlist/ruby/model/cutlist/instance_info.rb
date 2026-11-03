@@ -7,6 +7,7 @@ module Ladb::OpenCutList
   class InstanceInfo < DataContainer
 
     attr_accessor :size, :definition_bounds
+    attr_accessor :kcut_item_material_name, :kcut_within_item   # KCut: single items (see ItemUtils)
     attr_reader :path
 
     @size = nil

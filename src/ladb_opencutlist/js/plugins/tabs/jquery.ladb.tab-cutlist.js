@@ -671,6 +671,36 @@
                     that.editPart(partId, undefined, tab);
                     return false;
                 });
+                // KCut: sort a group's rows by a single-item value column (click again to reverse)
+                $('.ladb-kcut-item-sort', that.$page).on('click', function () {
+                    const $th = $(this);
+                    const col = $th.data('kcut-col');
+                    const $table = $th.closest('table');
+                    const $tbody = $table.children('tbody');
+                    const asc = $th.data('kcut-asc') !== true;
+                    $('.ladb-kcut-item-sort', $table).data('kcut-asc', null);
+                    $('.ladb-kcut-sort-indicator', $table).text('');
+                    $th.data('kcut-asc', asc);
+                    $('.ladb-kcut-sort-indicator', $th).text(asc ? '\u25B2' : '\u25BC');
+                    const fnKey = function (row) {
+                        const raw = $(row).children('[data-kcut-col="' + col + '"]').attr('data-kcut-sort');
+                        return raw === undefined ? '' : raw;
+                    };
+                    const rows = $tbody.children('tr.ladb-cutlist-row').not('.ladb-cutlist-row-child').get();
+                    rows.sort(function (a, b) {
+                        const ka = fnKey(a), kb = fnKey(b);
+                        const na = Number(ka), nb = Number(kb);
+                        let r;
+                        if (ka.trim() !== '' && kb.trim() !== '' && !isNaN(na) && !isNaN(nb)) {
+                            r = na - nb;
+                        } else {
+                            r = ka.localeCompare(kb, undefined, { numeric: true, sensitivity: 'base' });
+                        }
+                        return asc ? r : -r;
+                    });
+                    $tbody.append(rows);
+                    return false;
+                });
                 $('a.ladb-btn-select-group-parts', that.$page).on('click', function () {
                     $(this).blur();
                     const $group = $(this).parents('.ladb-cutlist-group');
@@ -1030,7 +1060,8 @@
                     { name: 'face_zmin', type: 'veneer' },
                     { name: 'layers', type: 'array' },
                     { name: 'component_definition', type: 'component_definition' },
-                    { name: 'component_instances', type: 'array' }
+                    { name: 'component_instances', type: 'array' },
+                    { name: 'item', type: 'string' }
                 ],
                 snippetDefs: [
                     { name: i18next.t('tab.cutlist.snippet.number_and_name'), value: '@number + " - " + @name' },
@@ -1073,6 +1104,7 @@
                     { name: 'layer', type: 'string' },
                     { name: 'component_definition', type: 'component_definition' },
                     { name: 'component_instance', type: 'component_instance' },
+                    { name: 'item', type: 'string' },
                 ],
                 snippetDefs: [
                     { name: i18next.t('tab.cutlist.snippet.number_and_name'), value: '@number + " - " + @name' },

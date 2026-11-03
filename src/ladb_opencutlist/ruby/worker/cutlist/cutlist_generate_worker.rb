@@ -16,6 +16,7 @@ module Ladb::OpenCutList
   require_relative '../../model/cutlist/part_def'
   require_relative '../../model/cutlist/part'
   require_relative '../../utils/transformation_utils'
+  require_relative '../../utils/item_utils'
 
   class CutlistGenerateWorker
 
@@ -201,6 +202,22 @@ module Ladb::OpenCutList
         end
 
         material, material_origin = _get_material(instance_info.path, @smart_material)
+
+        # KCut: components reported as single items use their item material.
+        # Inside an item, only hardware is still listed.
+        if instance_info.kcut_item_material_name
+          item_material = model ? model.materials[instance_info.kcut_item_material_name] : nil
+          if item_material && _get_material_attributes(item_material).type == MaterialAttributes::TYPE_HARDWARE
+            material = item_material
+            material_origin = MATERIAL_ORIGIN_OWNED
+          else
+            warning = [ 'tab.cutlist.warning.kcut_item_material_missing', { :material_name => instance_info.kcut_item_material_name } ]
+            cutlist.add_warning(warning) unless cutlist.warnings.include?(warning)
+          end
+        elsif instance_info.kcut_within_item
+          next unless material && _get_material_attributes(material).type == MaterialAttributes::TYPE_HARDWARE
+        end
+
         material_attributes = _get_material_attributes(material)
         material_id = material ? material.entityID : ''
         material_name = material ? material.name : ''
@@ -468,6 +485,14 @@ module Ladb::OpenCutList
         # Define part
 
         part_id = PartDef.generate_part_id(group_id, definition, definition_attributes, instance_info, @dynamic_attributes_name, @flipped_detection)
+
+        # KCut: items with different reported values stay on separate rows
+        item_values = nil
+        if instance_info.kcut_item_material_name
+          item_values = ItemUtils.read_values(entity)
+          part_id = Digest::MD5.hexdigest("#{part_id}|kcut_item|#{ItemUtils.signature(item_values)}")
+        end
+
         part_def = group_def.get_part_def(part_id)
         unless part_def
 
@@ -518,6 +543,7 @@ module Ladb::OpenCutList
           part_def.symmetrical = definition_attributes.symmetrical
           part_def.ignore_grain_direction = definition_attributes.ignore_grain_direction
           part_def.auto_oriented = size.auto_oriented?
+          part_def.kcut_item_values = item_values
 
           # Propose cutting dimensions display if part is flaged as cumulable
           if definition_attributes.cumulable != DefinitionAttributes::CUMULABLE_NONE
@@ -923,7 +949,7 @@ module Ladb::OpenCutList
 
     # -- Components utils --
 
-    def _fetch_useful_instance_infos(entity, path, auto_orient, face_bounds_cache = {})
+    def _fetch_useful_instance_infos(entity, path, auto_orient, face_bounds_cache = {}, within_item = false)
       return 0 if entity.is_a?(Sketchup::Edge)   # Minor Speed improvement when there's a lot of edges
       face_count = 0
       if entity.visible? && _layer_visible?(entity.layer, path.empty?)
@@ -932,7 +958,7 @@ module Ladb::OpenCutList
 
           # Entity is a group : check its children
           entity.entities.each { |child_entity|
-            face_count += _fetch_useful_instance_infos(child_entity, path + [ entity ], auto_orient, face_bounds_cache)
+            face_count += _fetch_useful_instance_infos(child_entity, path + [ entity ], auto_orient, face_bounds_cache, within_item)
           }
 
         elsif entity.is_a?(Sketchup::ComponentInstance)
@@ -940,10 +966,25 @@ module Ladb::OpenCutList
           # Exclude special behavior components
           return 0 if entity.definition.behavior.always_face_camera?
 
+          # KCut: component reported as a single item (e.g. a drawer box)
+          item_material_name = within_item ? nil : ItemUtils.item_material_name(entity)
+
           # Entity is a component instance : check its children
           entity.definition.entities.each { |child_entity|
-            face_count += _fetch_useful_instance_infos(child_entity, path + [ entity ], auto_orient, face_bounds_cache)
+            face_count += _fetch_useful_instance_infos(child_entity, path + [ entity ], auto_orient, face_bounds_cache, within_item || !item_material_name.nil?)
           }
+
+          if item_material_name
+            bounds = _kcut_item_bounds(entity.definition)
+            unless bounds.empty?
+              instance_info = InstanceInfo.new(path + [ entity ])
+              instance_info.size = Size3d.create_from_bounds(bounds, instance_info.scale, false)  # Keep the component's own axes
+              instance_info.definition_bounds = bounds
+              instance_info.kcut_item_material_name = item_material_name
+              _store_instance_info(instance_info)
+            end
+            return 0
+          end
 
           # Treat cuts_opening behavior component instances as simple group
           return face_count if entity.definition.behavior.cuts_opening?
@@ -959,6 +1000,7 @@ module Ladb::OpenCutList
               instance_info = InstanceInfo.new(path + [ entity ])
               instance_info.size = Size3d.create_from_bounds(bounds, instance_info.scale, auto_orient && !_get_definition_attributes(entity.definition).orientation_locked_on_axis)
               instance_info.definition_bounds = bounds
+              instance_info.kcut_within_item = within_item
 
               # Add instance info to cache
               _store_instance_info(instance_info)
@@ -976,6 +1018,27 @@ module Ladb::OpenCutList
         end
       end
       face_count
+    end
+
+    # KCut: bounds of all visible faces of an item, nested components included
+    def _kcut_item_bounds(definition_or_group, transformation = nil)
+      bounds = Geom::BoundingBox.new
+      definition_or_group.entities.each do |entity|
+        next if entity.is_a?(Sketchup::Edge)
+        next unless entity.visible? && _layer_visible?(entity.layer)
+        if entity.is_a?(Sketchup::Face)
+          face_bounds = entity.bounds
+          if transformation
+            face_bounds = Geom::BoundingBox.new.add((0..7).map { |i| face_bounds.corner(i).transform(transformation) })
+          end
+          bounds.add(face_bounds)
+        elsif entity.is_a?(Sketchup::Group)
+          bounds.add(_kcut_item_bounds(entity, transformation ? transformation * entity.transformation : entity.transformation))
+        elsif entity.is_a?(Sketchup::ComponentInstance)
+          bounds.add(_kcut_item_bounds(entity.definition, transformation ? transformation * entity.transformation : entity.transformation))
+        end
+      end
+      bounds
     end
 
     # -- Faces Utils --

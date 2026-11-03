@@ -5,6 +5,7 @@ module Ladb::OpenCutList
   require_relative '../../model/formula/formula_data'
   require_relative '../../worker/common/common_eval_formula_worker'
   require_relative '../../helper/sanitizer_helper'
+  require_relative '../../utils/item_utils'
 
   class CutlistExportWorker
 
@@ -314,7 +315,9 @@ module Ladb::OpenCutList
             layers: ArrayFormulaWrapper.new(part.def.instance_infos.values.map { |instance_info| instance_info.layer.name }.uniq),
 
             component_definition: ComponentDefinitionFormulaWrapper.new(part.def.definition),
-            component_instances: ArrayFormulaWrapper.new(part.def.instance_infos.values.map { |instance_info| ComponentInstanceFormulaWrapper.new(instance_info.entity) })
+            component_instances: ArrayFormulaWrapper.new(part.def.instance_infos.values.map { |instance_info| ComponentInstanceFormulaWrapper.new(instance_info.entity) }),
+
+            item: ItemFormulaWrapper.new(part.def.kcut_item_values)
 
           )
 
@@ -406,6 +409,8 @@ module Ladb::OpenCutList
 
                 component_definition: ComponentDefinitionFormulaWrapper.new(instance_info.definition),
                 component_instance: ComponentInstanceFormulaWrapper.new(instance_info.entity),
+
+                item: ItemFormulaWrapper.new(ItemUtils.item?(instance_info.entity) ? ItemUtils.read_values(instance_info.entity) : nil),
 
               )
 
@@ -530,7 +535,9 @@ module Ladb::OpenCutList
       layers:,
 
       component_definition:,
-      component_instances:
+      component_instances:,
+
+      item: ItemFormulaWrapper.new(nil)   # KCut
 
     )
       @number = number
@@ -563,6 +570,7 @@ module Ladb::OpenCutList
       @layers = layers
       @component_definition = component_definition
       @component_instances = component_instances
+      @item = item
     end
 
   end
@@ -597,7 +605,9 @@ module Ladb::OpenCutList
       layer:,
 
       component_definition:,
-      component_instance:
+      component_instance:,
+
+      item: ItemFormulaWrapper.new(nil)   # KCut
 
     )
       @number = number
@@ -630,6 +640,7 @@ module Ladb::OpenCutList
       @layer = layer
       @component_instance = component_instance
       @component_definition = component_definition
+      @item = item
     end
 
   end

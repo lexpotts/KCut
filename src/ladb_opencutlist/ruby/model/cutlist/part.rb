@@ -107,7 +107,7 @@ module Ladb::OpenCutList
 
   class Part < AbstractPart
 
-    attr_reader :definition_id, :is_dynamic_attributes_name, :resized, :flipped, :axes_flipped, :material_origins, :orientation_locked_on_axis, :symmetrical, :entity_ids, :entity_serialized_paths, :auto_oriented, :not_aligned_on_axes, :unused_instance_count, :content_layers, :multiple_content_layers, :edge_entity_ids, :face_entity_ids, :axes_to_values, :axes_to_dimensions, :dimensions_to_axes
+    attr_reader :definition_id, :is_dynamic_attributes_name, :kcut_needs_designation_setup, :resized, :flipped, :axes_flipped, :material_origins, :orientation_locked_on_axis, :symmetrical, :entity_ids, :entity_serialized_paths, :auto_oriented, :not_aligned_on_axes, :unused_instance_count, :content_layers, :multiple_content_layers, :edge_entity_ids, :face_entity_ids, :axes_to_values, :axes_to_dimensions, :dimensions_to_axes
 
     def initialize(part_def, group, part_number)
       super(part_def, group)
@@ -115,6 +115,7 @@ module Ladb::OpenCutList
       @definition_id = part_def.definition_id
       @number = part_def.number ? part_def.number : part_number
       @is_dynamic_attributes_name = part_def.is_dynamic_attributes_name
+      @kcut_needs_designation_setup = part_def.kcut_needs_designation_setup
       @resized = !part_def.scale.identity?
       @flipped = part_def.flipped
       @axes_flipped = part_def.size.axes_flipped?

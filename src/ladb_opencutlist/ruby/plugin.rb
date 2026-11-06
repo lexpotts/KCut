@@ -21,6 +21,7 @@ module Ladb::OpenCutList
   require_relative 'utils/path_utils'
   require_relative 'utils/hash_utils'
   require_relative 'utils/item_utils'
+  require_relative 'utils/designation_utils'
   require_relative 'tool/smart_draw_tool'
   require_relative 'tool/smart_handle_tool'
   require_relative 'tool/smart_paint_tool'
@@ -887,6 +888,10 @@ module Ladb::OpenCutList
               kcut_clear_single_items(flagged) if _assert_not_zzz
             }
           end
+          submenu.add_separator
+          submenu.add_item(instances.length > 1 ? "Use Parent CabNum + Name on #{instances.length} Components" : 'Use Parent CabNum + Name') {
+            kcut_designation_setup(instances) if _assert_not_zzz
+          }
         end
       end
 
@@ -1429,6 +1434,24 @@ module Ladb::OpenCutList
         return
       end
       Sketchup.status_text = "KCut: #{instances.length} component(s) now report as '#{material.name}' items. Regenerate the parts list to see them."
+    end
+
+    # KCut: CabNum = parent!CabNum and Name (if missing) on the selected
+    # instances, so the parts list shows them as "CabNum - Name".
+    def kcut_designation_setup(instances)
+      model = Sketchup.active_model
+      return if model.nil? || instances.empty?
+      parent_path = model.active_path || []
+      model.start_operation('KCut - Use Parent CabNum', true)
+      begin
+        instances.each { |instance| DesignationUtils.set_up(instance, parent_path) }
+        model.commit_operation
+      rescue => e
+        model.abort_operation
+        UI.messagebox("KCut: could not set up CabNum / Name. #{e.message}")
+        return
+      end
+      Sketchup.status_text = "KCut: #{instances.length} component(s) now use their parent's CabNum. Regenerate the parts list to see them."
     end
 
     # KCut: back to OCL's default behaviour (list the component's parts).

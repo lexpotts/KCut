@@ -736,6 +736,22 @@
                     that.highlightPart(partId);
                     return false;
                 });
+                // KCut: CabNum = parent!CabNum + Name on a part's instances (or on the selected parts)
+                $('a.ladb-kcut-btn-designation-setup', that.$page).on('click', function () {
+                    $(this).blur();
+                    const $part = $(this).parents('.ladb-cutlist-row');
+                    const partId = $part.data('part-id');
+                    const partIds = that.selectionPartIds.includes(partId) ? that.selectionPartIds.slice() : [ partId ];
+                    rubyCallCommand('cutlist_kcut_designation_setup', { part_ids: partIds }, function (response) {
+                        if (response.errors) {
+                            that.dialog.notifyErrors(response.errors);
+                        } else {
+                            that.dialog.notifySuccess(i18next.t('tab.cutlist.tooltip.kcut_designation_setup_success', { count: response.count }));
+                            that.generateCutlist();
+                        }
+                    });
+                    return false;
+                });
                 $('a.ladb-btn-edit-part', that.$page).on('click', function () {
                     $(this).blur();
                     const $row = $(this).parents('.ladb-cutlist-row');

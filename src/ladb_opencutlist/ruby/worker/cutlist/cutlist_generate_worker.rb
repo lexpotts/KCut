@@ -661,6 +661,7 @@ module Ladb::OpenCutList
         part_def.add_entity_serialized_path(instance_info.serialized_path)
         part_def.add_entity_name(entity.name, instance_info.named_path)
         part_def.store_instance_info(instance_info)
+        part_def.kcut_needs_designation_setup = true unless instance_info.kcut_designation[:set_up]
 
         if group_def.material_attributes.type != MaterialAttributes::TYPE_UNKNOWN && group_def.material_attributes.type != MaterialAttributes::TYPE_HARDWARE
           group_def.total_cutting_length += part_def.cutting_size.length

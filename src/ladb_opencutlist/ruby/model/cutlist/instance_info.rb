@@ -3,6 +3,7 @@ module Ladb::OpenCutList
   require_relative '../data_container'
   require_relative '../../model/geom/scale3d'
   require_relative '../../utils/path_utils'
+  require_relative '../../utils/designation_utils'
 
   class InstanceInfo < DataContainer
 
@@ -19,12 +20,16 @@ module Ladb::OpenCutList
 
     # -----
 
+    # KCut: the DC Name (with CabNum in front, see DesignationUtils) is always
+    # used when the part has one, whatever try_from_dynamic_attributes says.
     def read_name(try_from_dynamic_attributes = false)
-      if try_from_dynamic_attributes
-        name = entity.get_attribute('dynamic_attributes', 'name', nil)
-        return [ name, true ] unless name.nil?
-      end
+      designation = kcut_designation[:designation]
+      return [ designation, true ] unless designation.nil?
       [ entity.definition.name, false ]
+    end
+
+    def kcut_designation
+      @kcut_designation ||= DesignationUtils.read(@path)
     end
 
     # -----

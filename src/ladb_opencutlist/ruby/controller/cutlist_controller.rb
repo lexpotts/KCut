@@ -72,6 +72,10 @@ module Ladb::OpenCutList
         part_update_command(settings)
       end
 
+      PLUGIN.register_command("cutlist_kcut_designation_setup") do |settings|
+        kcut_designation_setup_command(settings)
+      end
+
       PLUGIN.register_command("cutlist_write_parts") do |settings|
         write_parts_command(settings)
       end
@@ -272,6 +276,16 @@ module Ladb::OpenCutList
 
       # Setup worker
       worker = CutlistPartUpdateWorker.new(@cutlist, **settings)
+
+      # Run !
+      worker.run
+    end
+
+    def kcut_designation_setup_command(settings)
+      require_relative '../worker/cutlist/cutlist_kcut_designation_setup_worker'
+
+      # Setup worker
+      worker = CutlistKcutDesignationSetupWorker.new(@cutlist, **settings)
 
       # Run !
       worker.run

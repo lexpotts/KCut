@@ -379,7 +379,10 @@ tab:
       children_size_increase: "This dimension is increased by an oversize for {{ count }} grouped parts"
       invalid_final_area: "Caution, this summable area could not be computed because {{ count }} part (of {{ total }}) has an invalid area"
       invalid_final_area_plural: "Caution, this summable area could not be computed because {{ count }} parts (of {{ total }}) have an invalid area"
-      is_dynamic_attributes_name: The designation of this part is extracted from the attribute 'Name' of the dynamic component
+      is_dynamic_attributes_name: The designation of this part is extracted from the attributes 'CabNum' and 'Name' of the dynamic component
+      kcut_designation_setup: "No CabNum / Name set up. Click to use the parent's CabNum (=parent!CabNum) and add Name (applies to the selected parts if this one is selected)"
+      kcut_designation_setup_success: "{{ count }} component set up with CabNum / Name"
+      kcut_designation_setup_success_plural: "{{ count }} components set up with CabNum / Name"
       has_edges: "This part contains {{ count }} edge banding"
       has_edges_plural: "This part contains {{ count }} edge bandings"
       has_faces: "This part contains {{ count }} veneered face"

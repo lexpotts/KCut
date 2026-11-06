@@ -1,5 +1,33 @@
 # KCut work log (newest first)
 
+## Done (not committed yet)
+
+### Part designation "CabNum - Name" (2026-11-05)
+- Parts with a DC `Name` (instance, else definition) are listed as that name,
+  with `CabNum` in front when there is one: "12 - Left Side". Always on (no
+  longer needs OCL's "Use the attribute Name" option). Different CabNum/Name →
+  separate rows. `CabNum` = `parent!CabNum` is read from the parent in the
+  path, so it's right before a DC redraw and when a definition is shared.
+- Parts without both Name and CabNum get a faded DC icon with a "+" in the
+  list; click it to convert (applies to all selected parts if that row is
+  selected). Also right-click › KCut › Use Parent CabNum + Name. Convert sets
+  the definition's CabNum formula to `parent!CabNum`, copies the parent's value
+  onto the instance, and adds Name = definition name if missing. One undo step.
+  Containers between the part and the nearest ancestor with its own CabNum
+  (drawer boxes, bumper/leveler assemblies) get `parent!CabNum` too (groups on
+  the group, components on the definition); left alone if no ancestor has one.
+- Files: `utils/designation_utils.rb` (new), `worker/cutlist/cutlist_kcut_designation_setup_worker.rb`
+  (new), `instance_info.rb`, `part_def.rb`, `part.rb`, generate worker,
+  `cutlist_controller.rb`, `plugin.rb`, `_list-row-col-name.twig`, tab-cutlist JS, `en.yml`.
+- Test `test/TC_Ladb_Utils_DesignationUtils.rb` (12 tests) pass on the Old
+  Gulph Testbed (minitest, TestUp not loaded). Converting all 896 unset parts
+  in its cabinets (aborted op): all set up, every one gets the nearest
+  cabinet's number (e.g. "19 - Drawer Back#27"). Names copied from definitions
+  keep SketchUp's "#27" suffix. UI button not clicked live yet (installed
+  plugin is the old build). Read-only check on 2424 E. Norris: 121
+  parts already set up (e.g. "1 - L End", "1 - Back"), 127 with Name only
+  (e.g. Biscuit Slot), 3533 with neither.
+
 ## Done (committed)
 
 ### `b6b1d3b04` Report components as single items (2026-11-03)

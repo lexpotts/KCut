@@ -22,7 +22,9 @@ module Ladb::OpenCutList
   require_relative 'utils/hash_utils'
   require_relative 'utils/item_utils'
   require_relative 'utils/designation_utils'
+  require_relative 'utils/core_box_utils'
   require_relative 'tool/smart_draw_tool'
+  require_relative 'tool/core_scale_tool'
   require_relative 'tool/smart_handle_tool'
   require_relative 'tool/smart_paint_tool'
   require_relative 'tool/smart_axes_tool'
@@ -846,6 +848,9 @@ module Ladb::OpenCutList
 
       end
       submenu.add_separator
+      submenu.add_item('KCut Resize Cabinet (Core Box)') {
+        Sketchup.active_model.select_tool(CoreScaleTool.new) if Sketchup.active_model && _assert_not_zzz
+      }
       submenu.add_item(get_i18n_string('core.menu.item.reset_dialog_position')) {
         tabs_dialog_reset_position if _assert_not_zzz
       }
@@ -892,6 +897,21 @@ module Ladb::OpenCutList
           submenu.add_item(instances.length > 1 ? "Use Parent CabNum + Name on #{instances.length} Components" : 'Use Parent CabNum + Name') {
             kcut_designation_setup(instances) if _assert_not_zzz
           }
+          cabinets = instances.select { |instance| CoreBoxUtils.cabinet?(instance) }
+          unless cabinets.empty?
+            submenu.add_separator
+            if cabinets.length == 1
+              submenu.add_item('Resize Cabinet (Core Box)') {
+                model.select_tool(CoreScaleTool.new(cabinets.first, model.edit_transform * cabinets.first.transformation)) if _assert_not_zzz
+              }
+            end
+            drifted = cabinets.select { |cabinet| CoreBoxUtils.drifted?(cabinet) }
+            unless drifted.empty?
+              submenu.add_item(drifted.length > 1 ? "Sync Size from Core Box on #{drifted.length} Cabinets" : 'Sync Size from Core Box') {
+                kcut_sync_from_core_box(drifted) if _assert_not_zzz
+              }
+            end
+          end
         end
       end
 
@@ -1434,6 +1454,21 @@ module Ladb::OpenCutList
         return
       end
       Sketchup.status_text = "KCut: #{instances.length} component(s) now report as '#{material.name}' items. Regenerate the parts list to see them."
+    end
+
+    # KCut: write the core box size to the cabinets' LenX/LenY/LenZ (the core box wins).
+    def kcut_sync_from_core_box(cabinets)
+      model = Sketchup.active_model
+      model.start_operation('KCut - Sync Size from Core Box', true)
+      begin
+        changed = cabinets.count { |cabinet| !CoreBoxUtils.sync_from_core_box(cabinet).empty? }
+        model.commit_operation
+        Sketchup.status_text = "KCut: synced the size of #{changed} cabinet(s) from their core box."
+      rescue StandardError => e
+        model.abort_operation
+        UI.messagebox("KCut: could not sync cabinet sizes.
+#{e.message}")
+      end
     end
 
     # KCut: CabNum = parent!CabNum and Name (if missing) on the selected

@@ -25,6 +25,7 @@ module Ladb::OpenCutList
   require_relative 'utils/core_box_utils'
   require_relative 'tool/smart_draw_tool'
   require_relative 'tool/core_scale_tool'
+  require_relative 'kcut/sketchup/recipe_editor'
   require_relative 'tool/smart_handle_tool'
   require_relative 'tool/smart_paint_tool'
   require_relative 'tool/smart_axes_tool'
@@ -912,6 +913,23 @@ module Ladb::OpenCutList
               }
             end
           end
+        end
+      end
+
+      # KCut: recipe groups (notes/architecture.md) - edit parameters, rebuild
+      UI.add_context_menu_handler do |context_menu|
+        model = Sketchup.active_model
+        recipes = model ? model.selection.select { |e| KCut::SketchUpAdapter::Regenerator.recipe_group?(e) } : []
+        unless recipes.empty?
+          submenu = context_menu.add_submenu('KCut')
+          if recipes.length == 1
+            submenu.add_item('Edit Recipe...') {
+              KCut::SketchUpAdapter::RecipeEditor.edit(recipes.first) if _assert_not_zzz
+            }
+          end
+          submenu.add_item(recipes.length > 1 ? "Rebuild #{recipes.length} Recipes" : 'Rebuild Recipe') {
+            KCut::SketchUpAdapter::RecipeEditor.rebuild(recipes) if _assert_not_zzz
+          }
         end
       end
 

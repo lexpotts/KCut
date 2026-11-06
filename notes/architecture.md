@@ -141,9 +141,9 @@ New features = new type + evaluate. Nothing else changes.
 - Mac: same suite in SketchUp for Mac; watch path separators, file encodings,
   and `UI` differences in the adapter only.
 
-## Open questions for Alex
-- Solid Tools needs SketchUp Pro. Is every seat Pro? (Decides the Boolean fallback scope.)
-- Project-level variables: store on the model (travels with the .skp) or in a
-  shared shop-standards file across projects? Possibly both: shop file seeds
-  the model.
-- Migration: convert existing DC cabinets to recipes, or only new work?
+## Decisions (Alex, 2026-11-05)
+- Every seat is SketchUp Pro or better: Solid Tools (`Group#subtract`) is
+  available; no non-Pro Boolean fallback needed.
+- Project variables: a shop-standards file seeds each new model; values then
+  live in the model and travel with the .skp.
+- Recipes are for new work. Existing DC cabinets are not migrated.

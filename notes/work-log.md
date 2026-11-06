@@ -2,6 +2,27 @@
 
 ## Done (not committed yet)
 
+### Recipe demo cabinet (2026-11-05)
+- First recipe assembly `kcut/assemblies/base_cabinet.rb` (pure) and the
+  SketchUp builder `kcut/sketchup/regenerator.rb`. Shop standards in
+  `kcut/shop/default_standards.json` seed the model's `kcut/project`.
+- Built "Base Cabinet 120 (KCut recipe)" in Old Gulph Testbed, to the side
+  of the model (not saved; two undo steps: build, move). Sizes taken from
+  Base Cabinet#8. Ends with a through toe notch + 2×11 shelf pins on 32 mm,
+  bottom, back, stretcher, cleat, toe kick, shelf, 2 doors with 35 mm cup
+  bores and dashed swing markers on tag `KCut/Door Swing`. Build ≈ 3.4 s;
+  every part is a solid.
+- Differences from #8 still to do: no levelers, hinge plates, pocket
+  screws, cab number display; bottom runs to the back (#8's stops at 476).
+- Each part gets one Boolean (all cutters in one group); chaining
+  `union`s was too slow and hung the MCP call.
+- Tests `test/TC_Ladb_KCut_Recipes.rb` + `TC_Ladb_KCut_Core.rb`: 30 pass.
+- Right-click › KCut › **Edit Recipe…** (input box of the recipe's values,
+  lengths in model units; stores only changes from the defaults; one undo
+  step) and **Rebuild Recipe(s)**. `kcut/sketchup/recipe_editor.rb`, handler
+  in `plugin.rb`. Installed plugin is still the old build; the menu was
+  registered live in the running SketchUp for trying it out (gone on restart).
+
 ### Part designation "CabNum - Name" (2026-11-05)
 - Parts with a DC `Name` (instance, else definition) are listed as that name,
   with `CabNum` in front when there is one: "12 - Left Side". Always on (no

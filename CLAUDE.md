@@ -9,8 +9,10 @@ cutlist/estimate plugin by L'Air du Bois. Upstream remote merges come from
 
 More notes: `notes/work-log.md` (what's done, what's pending),
 `notes/thickness-investigation.md` (open LenZ investigation — no decision yet).
-Sibling repos: `..\kole-sketchup-plugin` (its `CLAUDE.md` covers the shared
-SketchUp workflow) and `..\sketchup-mcp` (bridge for running Ruby in SketchUp).
+KCut now lives in `C:\Users\Alex\Desktop\KOLE AI\` (moved 2026-11-14); read
+`..\CLAUDE.md` first, it indexes the whole workspace. Related: `..\kole-sketchup-plugin`
+(its `CLAUDE.md` covers the shared SketchUp workflow; `notes/wishlist.md` has Alex's
+full pain-point list) and `C:\Users\Alex\Desktop\sketchup-mcp` (bridge for running Ruby in SketchUp).
 
 ## Layout
 - Ruby: `src/ladb_opencutlist/ruby/` (`plugin.rb`, `worker/cutlist/*`,

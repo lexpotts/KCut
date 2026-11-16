@@ -165,6 +165,33 @@ show the blank you'd actually need to cut the curve from.
 **To review.** Alex is adding the component library (stacked-ply curve
 examples) and cabinet library to the workspace. Study these before designing.
 
+## 16. Parent values with sensible fallbacks when a part stands alone — `idea`
+
+**Problem.** A part inside a cabinet takes its size and position from the
+cabinet (`parent!…`, `REV BOX!X`, `revBet`, …). Take it out of the cabinet
+(e.g. drag a door out, or place it loose from the library) and those
+references have nothing to read. DC treats them as 0 or errors, so the door
+snaps to the origin and/or collapses in size.
+
+**Wants.**
+- Parts inherit values from their parent when the parent sets them (as now).
+- When the part isn't inside a parent that sets a value, it either:
+  - **falls back to a default** (its own stored value, a library default, or
+    the last value it had), or
+  - **drops the setting** so it no longer applies, e.g. position formulas
+    stop driving X/Y/Z and the part stays exactly where it is.
+- Example: removing a door from a cabinet leaves the door where it was, at
+  its last size. It doesn't jump to the origin.
+- Putting it back into a cabinet picks the parent's values up again.
+
+**Approaches.** Related to #3 (scoped lookup with a fallback chain: parent →
+ancestors → model root → part default). Options to test: write defaults into
+the part's own attributes and have formulas use them when the parent value is
+missing (DC has no `ISBLANK`-style test for a missing `parent!` reference, so
+check what a missing reference actually returns); or an observer that detects
+a part leaving its parent and freezes/removes its placement formulas, then
+restores them when it's placed back in a parent.
+
 ---
 
 ## How SketchUp inheritance works (reference)

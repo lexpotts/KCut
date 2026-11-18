@@ -6,6 +6,9 @@ Handoff notes for Claude Code, exported 2026-11-05 from the claude.ai Project
 KCut is Alex's fork of **OpenCutList** (he calls it "OCL"), the SketchUp
 cutlist/estimate plugin by L'Air du Bois. Upstream remote merges come from
 `upstream/master`; Alex's own work starts at `8112ad1db`.
+Remotes: `origin` = Alex's GitHub repo `https://github.com/lexpotts/KCut.git`
+(`master` tracks it); `upstream` = OpenCutList (lairdubois) — never push there.
+Push to `origin` only when Alex asks.
 
 More notes: `notes/work-log.md` (what's done, what's pending),
 `notes/thickness-investigation.md` (open LenZ investigation — no decision yet).
@@ -44,8 +47,10 @@ full pain-point list) and `C:\Users\Alex\Desktop\sketchup-mcp` (bridge for runni
 - **CRLF line endings.** Preserve them when editing. Five files show as
   modified only because of line endings — not real edits, leave them alone.
   Commit with `git -c core.autocrlf=true …`.
-- **No git identity configured:** `git -c user.name="Alex" -c user.email="lex.potsus@gmail.com" commit …`
-  (don't change his config). Commit trailer: `Co-Authored-By: Claude …`.
+- **Git identity is set in this repo's local config** (since 2026-11-18): author
+  `Alex <lex.potsus@gmail.com>`, committer `Kole-Agent <Alex+AI_Git@kolemade.com>`,
+  so a plain `git -c core.autocrlf=true commit …` is right — no `-c user.name` needed.
+  Don't change his global config. Commit trailer: `Co-Authored-By: Claude …`.
 - Add a TestUp test for each change (they run in an aborted operation).
 
 ## Code knowledge

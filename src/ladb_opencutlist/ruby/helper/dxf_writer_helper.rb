@@ -277,6 +277,12 @@ module Ladb::OpenCutList
     DXF_TEXT_VALIGN_MIDDLE = 2
     DXF_TEXT_VALIGN_TOP = 3
 
+    # KCut: estimated average character advance as a fraction of text height.
+    # Used to compute a real TEXT start point (group 10) for readers that ignore
+    # alignment and the alignment point (group 11), e.g. VCarve.
+    # 0.8 measured in VCarve (2026-11-18): "Side Panel" ~478 mm wide at 60 mm height.
+    DXF_TEXT_CHAR_WIDTH_RATIO = 0.8
+
     DXF_LINE_TYPE_CONTINUOUS = 'CONTINUOUS'.freeze
     DXF_LINE_TYPE_DOT2 = 'DOT2'.freeze
 
@@ -1185,17 +1191,22 @@ module Ladb::OpenCutList
 
     end
 
-    def _dxf_write_text(file, x, y, height, text, ar = 0, halign = DXF_TEXT_HALIGN_LEFT, valign = DXF_TEXT_VALIGN_BASE_LINE, layer = '0')
+    def _dxf_write_text(file, x, y, height, text, ar = 0, halign = DXF_TEXT_HALIGN_LEFT, valign = DXF_TEXT_VALIGN_BASE_LINE, layer = '0', start_x = nil, start_y = nil)
 
       # Docs : https://help.autodesk.com/view/OARXMAC/2024/FRA/?guid=GUID-62E5383D-8A14-47B4-BFC4-35824CAE8363
+
+      # x, y is the alignment point (group 11). start_x, start_y (group 10) is the
+      # left/baseline start point; it defaults to the alignment point.
+      start_x = x if start_x.nil?
+      start_y = y if start_y.nil?
 
       _dxf_write(file, 0, 'TEXT')
       _dxf_write_id(file)
       _dxf_write_sub_classes(file, [ 'AcDbEntity' ])
       _dxf_write(file, 8, layer)
       _dxf_write_sub_classes(file, [ 'AcDbText' ])
-      _dxf_write(file, 10, x)
-      _dxf_write(file, 20, y)
+      _dxf_write(file, 10, start_x)
+      _dxf_write(file, 20, start_y)
       _dxf_write(file, 30, 0.0)
       _dxf_write(file, 40, height)
       _dxf_write(file, 50, ar)
@@ -1218,8 +1229,25 @@ module Ladb::OpenCutList
       theight = [ 60.0, th / 2, tw / text.length ].min
       angle = angle % 180
 
-      _dxf_write_text(file, tx , ty, theight, text, angle, DXF_TEXT_HALIGN_CENTER, DXF_TEXT_VALIGN_MIDDLE, layer)
+      sx, sy = _dxf_compute_centered_text_start(tx, ty, theight, text, angle)
 
+      _dxf_write_text(file, tx , ty, theight, text, angle, DXF_TEXT_HALIGN_CENTER, DXF_TEXT_VALIGN_MIDDLE, layer, sx, sy)
+
+    end
+
+    # KCut: estimated left/baseline start point of a text whose middle-center is (cx, cy).
+    # AutoCAD-like readers recompute it from the alignment point; readers that only
+    # use group 10 (e.g. VCarve) then draw the label centered instead of starting at the center.
+    def _dxf_compute_centered_text_start(cx, cy, height, text, angle = 0)
+      half_width = text.to_s.length * height * DXF_TEXT_CHAR_WIDTH_RATIO / 2.0
+      half_height = height / 2.0
+      a = angle.to_f * Math::PI / 180.0
+      cos = Math.cos(a)
+      sin = Math.sin(a)
+      [
+        cx - half_width * cos + half_height * sin,
+        cy - half_width * sin - half_height * cos
+      ]
     end
 
     # -- INSERT GEOMETRY
